@@ -1,0 +1,41 @@
+{
+  "name": "lawyer",
+  "version": "1.0.0",
+  "description": "Lawyers Egypt Digital - Law Office Management App",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electronmon .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "pack": "electron-packager . \"lawyer\" --platform=win32 --arch=x64 --out=dist --overwrite",
+    "pack-law": "if exist \"law\" rmdir /s /q \"law\" && electron-packager . law --platform=win32 --arch=x64 --out=. --overwrite --asar=false --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-win32-x64\" ren \"law-win32-x64\" \"law\"",
+    "dist": "electron-builder --publish=never"
+  },
+  "author": "Ahmad - Egypt",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "37.4.0",
+    "electron-builder": "^25.0.0",
+    "electronmon": "^2.0.3"
+  },
+  "build": {
+    "appId": "com.lawyers.egypt.digital",
+    "productName": "lawyer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "requestedExecutionLevel": "asInvoker",
+      "sign": false
+    },
+    "portable": {
+      "artifactName": "lawyer.exe"
+    }
+  }
+}
