@@ -1232,8 +1232,8 @@ const GITHUB_CONFIG = {
     owner: atob('QWhtYWRBbGxhbQ=='),
     repo: atob('bGF3eWVycy1kYXRh'),
     token: (() => {
-        const part1 = atob('Z2hwXzczeUV0T2ZyaGJSN05ScGFGaGpC');
-        const part2 = atob('cGVVZ0E1R3VOZDRKTklMUg==');
+        const part1 = atob('Z2hwX1ZTUTVBaExaaENTdGxnRTUydUloY21SYg==');
+        const part2 = atob('N09oemw3NDhhREkz');
         return part1 + part2;
     })()
 };
