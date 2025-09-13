@@ -6,150 +6,63 @@ function displaySettingsModal() {
         <div class="max-w-full mx-auto p-3">
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 
-                <!-- النسخ الاحتياطي والاستعادة -->
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
-                    <div class="text-center mb-4">
-                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                            <i class="ri-hard-drive-2-line text-white text-lg"></i>
-                        </div>
-                        <h3 class="text-base font-bold text-blue-700 mb-1">النسخ الاحتياطي</h3>
-                        <p class="text-sm text-gray-600">حماية البيانات</p>
-                    </div>
-                    <p class="text-gray-600 text-sm mb-4 text-center">نسخ احتياطي أو استعادة</p>
-                    <div class="space-y-3">
-                        <button id="backup-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-                            <i class="ri-download-2-line text-lg"></i>
-                            إنشاء نسخة احتياطية
-                        </button>
-                        <div class="relative">
-                            <input type="file" id="restore-file-input" accept=".json" class="hidden">
-                            <button id="restore-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-                                <i class="ri-upload-2-line text-lg"></i>
-                                استعادة من نسخة احتياطية
-                            </button>
-                        </div>
-                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                            <span class="text-sm font-semibold text-gray-700">النسخ الاحتياطي تلقائياً عند الخروج</span>
-                            <label class="flex items-center gap-3 cursor-pointer select-none">
-                                <input id="toggle-auto-backup" type="checkbox" style="position:absolute;width:1px;height:1px;opacity:0;">
-                                <div id="auto-backup-track" class="relative" style="width:56px;height:28px;border-radius:9999px;background:#e5e7eb;border:1px solid #cbd5e1;box-shadow:inset 0 1px 2px rgba(0,0,0,.08);transition:background .25s, box-shadow .25s, border-color .25s;cursor:pointer;">
-                                    <div id="auto-backup-knob" style="position:absolute;top:2px;left:2px;width:24px;height:24px;background:#ffffff;border-radius:9999px;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .25s, box-shadow .25s;"></div>
-                                </div>
-                                <span id="auto-backup-off" class="text-xs.font-bold" style="color:#4b5563;">موقوف</span>
-                                <span id="auto-backup-on" class="text-xs font-bold" style="color:#1d4ed8;display:none;">مُفعّل</span>
-                            </label>
-                        </div>
-                        <div id="auto-backup-note" class="mt-2 text-xs text-yellow-700">هذه الميزة تعمل فقط في تطبيق سطح المكتب، ولن تعمل في المتصفح العادي</div>
-                    </div>
-                </div>
-
-                <!-- البيانات التجريبية -->
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
-                    <div class="text-center mb-4">
-                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                            <i class="ri-database-2-line text-white text-lg"></i>
-                        </div>
-                        <h3 class="text-base font-bold text-blue-700 mb-1">البيانات التجريبية</h3>
-                        <p class="text-sm text-gray-600">للاختبار والتجربة</p>
-                    </div>
-                    <p class="text-gray-600 text-sm mb-4 text-center">بيانات تجريبية للاختبار</p>
-                    <div class="space-y-3">
-                        <button id="add-sample-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-                            <i class="ri-database-2-line text-lg"></i>
-                            إضافة البيانات التجريبية
-                        </button>
-                        <button id="delete-all-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-                            <i class="ri-delete-bin-2-line text-lg"></i>
-                            مسح شامل للبيانات
-                        </button>
-                    </div>
-                </div>
-
                 <!-- إعدادات المكتب -->
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
                     <div class="text-center mb-4">
                         <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
                             <i class="ri-building-line text-white text-lg"></i>
                         </div>
-                        <h3 class="text-base font-bold text-blue-700 mb-1">إعدادات المكتب</h3>
-                        <p class="text-sm text-gray-600">تخصيص معلومات المكتب</p>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">الاسم وكلمة المرور</h3>
+                        <p class="text-sm text-gray-600">أدخل وحدث اسم المكتب</p>
                     </div>
                     <div class="space-y-4">
+                        <!-- اسم المكتب -->
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2 text-center">اسم المكتب</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1 text-right">اسم المكتب</label>
                             <input type="text" id="office-name-input" 
-                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-sm bg-white transition-all" 
-                                   placeholder="أدخل اسم المكتب">
+                                   class="w-full px-4 py-4 border-3 border-gray-400 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-600 text-center text-base bg-white transition-all shadow-sm" 
+                                   placeholder="أدخل اسم المكتب"
+                                   style="min-height: 50px; font-size: 16px;">
                         </div>
-                        <button id="save-office-settings-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-                            <i class="ri-save-line text-lg"></i>
-                            حفظ الإعدادات
-                        </button>
-                    </div>
-                </div>
 
-                <!-- إعدادات الأمان -->
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
-                    <div class="text-center mb-4">
-                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                            <i class="ri-shield-keyhole-line text-white text-lg"></i>
-                        </div>
-                        <h3 class="text-base font-bold text-blue-700 mb-1">إعدادات الأمان</h3>
-                        <p class="text-sm text-gray-600">حماية التطبيق بكلمة مرور</p>
-                    </div>
-                    <div class="space-y-3">
+                        <!-- كلمة المرور -->
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2 text-center">كلمة المرور</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1 text-right">كلمة المرور</label>
                             <input type="password" id="app-password-input" 
-                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-sm bg-white transition-all" 
-                                   placeholder="أدخل كلمة المرور">
+                                   class="w-full px-4 py-4 border-3 border-gray-400 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-600 text-center text-base bg-white transition-all shadow-sm" 
+                                   placeholder="أدخل كلمة المرور"
+                                   style="min-height: 50px; font-size: 16px;">
                         </div>
-                        <button id="save-password-btn" class="w-full px-4 py-3 bg-blue-900 hover:bg-black text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2">
-                            <i class="ri-lock-line text-lg"></i>
-                            حفظ كلمة المرور
-                        </button>
-                    </div>
-                </div>
 
-                <!-- نسخ الصيغ الجاهزة -->
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
-                    <div class="text-center mb-4">
-                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                            <i class="ri-file-copy-line text-white text-lg"></i>
-                        </div>
-                        <h3 class="text-base font-bold text-blue-700 mb-1">الصيغ الجاهزة</h3>
-                        <p class="text-sm text-gray-600">نسخ مجلد الصيغ إلى سطح المكتب</p>
-                    </div>
-                    <p class="text-gray-600 text-sm mb-4 text-center">نسخ جميع الصيغ القانونية الجاهزة</p>
-                    <div class="space-y-3">
-                        <button id="copy-pack-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-                            <i class="ri-file-copy-line text-lg"></i>
-                            نسخ الصيغ الجاهزة لسطح المكتب
+                        <!-- زر حفظ موحّد في الأسفل -->
+                        <button id="save-office-and-password-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                            <i class="ri-save-3-line text-lg"></i>
+                            حفظ
                         </button>
                     </div>
                 </div>
 
                 <!-- مزامنة البيانات -->
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
                     <div class="text-center mb-4">
-                        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
                             <i class="ri-cloud-line text-white text-lg"></i>
                         </div>
-                        <h3 class="text-base font-bold text-green-700 mb-1">مزامنة البيانات</h3>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">مزامنة البيانات</h3>
                         <p class="text-sm text-gray-600">مزامنة بين الأجهزة المختلفة</p>
                     </div>
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2 text-center">معرف المكتب (أرقام فقط)</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1 text-right">معرّف المزامنة</label>
                             <div class="relative">
                                 <input type="text" id="sync-client-id" 
-                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-sm bg-white transition-all" 
+                                       class="w-full px-4 py-4 border-3 border-gray-400 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-600 text-center text-base bg-white transition-all shadow-sm" 
                                        placeholder="مثال: 123456789"
                                        pattern="[0-9]*"
-                                       inputmode="numeric">
+                                       inputmode="numeric"
+                                       style="min-height: 50px; font-size: 16px;">
                                 <i id="sync-id-lock-icon" class="ri-lock-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg hidden"></i>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1 text-center">المعرّف يُصدر من الإدارة</p>
                             <p id="sync-id-locked-message" class="text-xs text-green-600 mt-1 text-center font-semibold hidden">
                                 <i class="ri-shield-check-line"></i> المعرف محفوظ ومؤمن
                             </p>
@@ -187,29 +100,144 @@ function displaySettingsModal() {
                                 </div>
                             </div>
                         </div>
-                                                                                            </div>
+                    </div>
+                </div>
+
+                <!-- النسخ الاحتياطي والاستعادة -->
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
+                    <div class="text-center mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                            <i class="ri-hard-drive-2-line text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">النسخ الاحتياطي</h3>
+                        <p class="text-sm text-gray-600">حماية البيانات</p>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4 text-center">نسخ احتياطي أو استعادة</p>
+                    <div class="space-y-3">
+                        <button id="backup-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                            <i class="ri-download-2-line text-lg"></i>
+                            إنشاء نسخة احتياطية
+                        </button>
+                        <div class="relative">
+                            <input type="file" id="restore-file-input" accept=".json" class="hidden">
+                            <button id="restore-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                                <i class="ri-upload-2-line text-lg"></i>
+                                استعادة من نسخة احتياطية
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                            <span class="text-sm font-semibold text-gray-700">النسخ الاحتياطي تلقائياً عند الخروج</span>
+                            <label class="flex items-center gap-3 cursor-pointer select-none">
+                                <input id="toggle-auto-backup" type="checkbox" style="position:absolute;width:1px;height:1px;opacity:0;">
+                                <div id="auto-backup-track" class="relative" style="width:56px;height:28px;border-radius:9999px;background:#e5e7eb;border:1px solid #cbd5e1;box-shadow:inset 0 1px 2px rgba(0,0,0,.08);transition:background .25s, box-shadow .25s, border-color .25s;cursor:pointer;">
+                                    <div id="auto-backup-knob" style="position:absolute;top:2px;left:2px;width:24px;height:24px;background:#ffffff;border-radius:9999px;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .25s, box-shadow .25s;"></div>
+                                </div>
+                                <span id="auto-backup-off" class="text-xs.font-bold" style="color:#4b5563;">موقوف</span>
+                                <span id="auto-backup-on" class="text-xs font-bold" style="color:#1d4ed8;display:none;">مُفعّل</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- البيانات التجريبية -->
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
+                    <div class="text-center mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                            <i class="ri-database-2-line text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">البيانات التجريبية</h3>
+                        <p class="text-sm text-gray-600">للاختبار والتجربة</p>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4 text-center">بيانات تجريبية للاختبار</p>
+                    <div class="space-y-3">
+                        <button id="add-sample-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                            <i class="ri-database-2-line text-lg"></i>
+                            إضافة البيانات التجريبية
+                        </button>
+                        <button id="delete-all-data-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                            <i class="ri-delete-bin-2-line text-lg"></i>
+                            مسح شامل للبيانات
+                        </button>
+                    </div>
+                </div>
+
+                <!-- نسخ الصيغ الجاهزة -->
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
+                    <div class="text-center mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                            <i class="ri-file-copy-line text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">الصيغ الجاهزة</h3>
+                        <p class="text-sm text-gray-600">نسخ مجلد الصيغ إلى سطح المكتب</p>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4 text-center">نسخ جميع الصيغ القانونية الجاهزة</p>
+                    <div class="space-y-3">
+                        <button id="copy-pack-btn" class="w-full px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                            <i class="ri-file-copy-line text-lg"></i>
+                            نسخ الصيغ الجاهزة لسطح المكتب
+                        </button>
+                    </div>
                 </div>
 
                                 
             </div>
         </div>
     `;
-    
+    // إعادة ترتيب مفتاح النسخ الاحتياطي ليظهر أعلى أزرار الكارت
+    try {
+        const autoBackupEl = document.getElementById('toggle-auto-backup');
+        if (autoBackupEl) {
+            const flexDiv = autoBackupEl.closest('div.flex');
+            const parent = flexDiv && flexDiv.parentElement;
+            if (flexDiv && parent) {
+                parent.insertBefore(flexDiv, parent.firstChild);
+            }
+        }
+    } catch (e) {}
+
+    // إزالة كارت كلمة المرور بعد دمجه داخل كارت اسم المكتب
+    try {
+        const gridEl = document.querySelector('#modal-content .grid');
+        if (gridEl) {
+            const cards = Array.from(gridEl.children);
+            const pwdCard = cards.find(c => {
+                const h3 = c.querySelector('h3');
+                return h3 && h3.textContent && h3.textContent.trim() === 'كلمة المرور';
+            });
+            if (pwdCard) pwdCard.remove();
+        }
+    } catch (e) {}
+
+    // جعل كارت الترخيص مساوي لكارت الأمان
+    try {
+        const h3s = document.querySelectorAll('#modal-content h3');
+        let securityCard = null, licenseCard = null;
+        h3s.forEach(h3 => {
+            const t = (h3.textContent || '').trim();
+            if (!securityCard && (t.includes('الأمان') || t.includes('كلمة المرور'))) securityCard = h3.closest('div.bg-white');
+            if (!licenseCard && t.includes('الترخيص')) licenseCard = h3.closest('div.bg-white');
+        });
+        if (securityCard && licenseCard) {
+            const targetHeight = securityCard.offsetHeight;
+            licenseCard.style.minHeight = targetHeight + 'px';
+        }
+    } catch (e) {}
+
     (function(){ 
         const grid = document.querySelector('#modal-content .grid');
         if (!grid) return;
         grid.insertAdjacentHTML('beforeend', `
-                <div class="bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit">
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
                     <div class="text-center mb-4">
                         <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
                             <i class="ri-volume-up-line text-white text-lg"></i>
                         </div>
                         <h3 class="text-base font-bold text-blue-700 mb-1">التنبيهات الصوتيه</h3>
-                        <p class="text-sm text-gray-600">تنبيهات جلسات الغد وأعمال الغد</p>
+
                     </div>
                     <div class="space-y-3">
-                        <label class="block text-sm font-bold text-gray-700 mb-2 text-center">تكرار التنبيه</label>
-                        <select id="tomorrow-audio-mode" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-sm bg-white transition-all">
+
+                        <select id="tomorrow-audio-mode" class="w-full px-4 py-4 border-4 border-gray-400 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-600 text-center text-base bg-white transition-all shadow-sm" style="min-height: 50px; font-size: 16px;">
                             <option value="off">معطل</option>
                             <option value="always">تشغيل باستمرار</option>
                             <option value="hourly">كل ساعة</option>
@@ -248,7 +276,38 @@ function displaySettingsModal() {
     
     loadOfficeSettings();
     
-    document.getElementById('save-office-settings-btn').addEventListener('click', handleSaveOfficeSettings);
+    // زر الحفظ الموحد لاسم المكتب وكلمة المرور
+    document.getElementById('save-office-and-password-btn').addEventListener('click', async () => {
+        // حفظ اسم المكتب
+        try {
+            const officeNameInput = document.getElementById('office-name-input');
+            const officeName = (officeNameInput?.value || '').trim();
+            if (!officeName) { showToast('يرجى إدخال اسم المكتب', 'error'); return; }
+            await setSetting('officeName', officeName);
+        } catch (e) {}
+        
+        // حفظ كلمة المرور (إن وُجدت)
+        try {
+            const input = document.getElementById('app-password-input');
+            if (input) {
+                const val = (input && input.value ? input.value.trim() : '');
+                if (!(input && input.dataset.masked === '1')) {
+                    if (val) {
+                        const enc = new TextEncoder().encode(val);
+                        const buf = await crypto.subtle.digest('SHA-256', enc);
+                        const hex = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+                        await setSetting('appPasswordHash', hex);
+                        await setSetting('appPasswordLen', val.length);
+                        sessionStorage.removeItem('auth_ok');
+                        input.value = 'x'.repeat(val.length); input.dataset.masked='1';
+                    }
+                }
+            }
+        } catch (e) {}
+        
+        showToast('تم الحفظ بنجاح');
+    });
+
     document.getElementById('backup-data-btn').addEventListener('click', handleBackupData);
     document.getElementById('restore-data-btn').addEventListener('click', handleRestoreDataClick);
     document.getElementById('copy-pack-btn').addEventListener('click', handleCopyPackToDesktop);
@@ -277,22 +336,21 @@ function displaySettingsModal() {
     const grid = document.querySelector('#modal-content .grid');
     if (grid) {
         const card = document.createElement('div');
-        card.className = 'bg-white border-2 border-gray-300 rounded-xl p-3 shadow-md transition-all h-fit';
+        card.className = 'bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit';
         card.innerHTML = `
             <div class="text-center mb-4">
                 <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
-                    <i class="ri-database-backup-line text-white text-lg"></i>
+                    <i class="ri-upload-cloud-2-line text-white text-lg"></i>
                 </div>
-                <h3 class="text-base font-bold text-blue-700 mb-1">نسخ XML إلى JSON</h3>
-                <p class="text-sm text-gray-600">تجميع ملفات Access XML إلى نسخة احتياطية</p>
+                <h3 class="text-base font-bold text-blue-700 mb-1">استيراد بيانات اكسس</h3>
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2 text-center">مجلد الاكسس</label>
+
                     <div class="flex gap-2">
                         <input type="text" id="xml-folder-path" 
-                               class="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white transition-all text-center font-medium" 
-                               placeholder="اختر مجلد الاكسس" readonly>
+                               class="flex-1 px-4 py-4 border-4 border-gray-400 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-600 text-base bg-white transition-all text-center font-medium shadow-sm" 
+                               placeholder="اختر مجلد الاكسس" readonly style="min-height: 50px; font-size: 16px;">
                         <button id="select-xml-folder-btn" class="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm flex items-center justify-center" title="اختيار مجلد الاكسس">
                             <i class="ri-folder-line text-lg"></i>
                         </button>
@@ -498,7 +556,9 @@ function displaySettingsModal() {
                     const h3 = el.querySelector('h3');
                     return h3 && h3.textContent ? h3.textContent.trim() : '';
                 };
-                const desiredOrder = ['إعدادات المكتب','إعدادات الأمان','التنبيهات الصوتيه','نسخ XML إلى JSON','النسخ الاحتياطي','البيانات التجريبية','الترخيص'];
+                // الصف الأول: الاسم وكلمة المرور، مزامنة البيانات، الترخيص، النسخ الاحتياطي
+                // الصف الثاني: البيانات التجريبية، الصيغ الجاهزة، التنبيهات الصوتيه، استيراد بيانات اكسس
+                const desiredOrder = ['الاسم وكلمة المرور','مزامنة البيانات','الترخيص','النسخ الاحتياطي','البيانات التجريبية','الصيغ الجاهزة','التنبيهات الصوتيه','استيراد بيانات اكسس'];
                 const cards = Array.from(container.children);
                 const used = new Set();
                 desiredOrder.forEach(title => {
@@ -560,25 +620,7 @@ function displaySettingsModal() {
             } catch (e) {}
         });
     })();
-    const savePwdBtn = document.getElementById('save-password-btn');
-    if (savePwdBtn) {
-        savePwdBtn.addEventListener('click', async function () {
-            try {
-                const input = document.getElementById('app-password-input');
-                const val = (input && input.value ? input.value.trim() : '');
-                if (input && input.dataset.masked === '1') { if (typeof showToast==='function') showToast('تم الاحتفاظ بكلمة المرور الحالية', 'success'); return; }
-                if (!val) { if (typeof showToast==='function') showToast('يرجى إدخال كلمة المرور', 'error'); return; }
-                const enc = new TextEncoder().encode(val);
-                const buf = await crypto.subtle.digest('SHA-256', enc);
-                const hex = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-                await setSetting('appPasswordHash', hex);
-                await setSetting('appPasswordLen', val.length);
-                sessionStorage.removeItem('auth_ok');
-                if (typeof showToast==='function') showToast('تم حفظ كلمة المرور', 'success');
-                if (input) { input.value = 'x'.repeat(val.length); input.dataset.masked='1'; }
-            } catch (e) {}
-        });
-    }
+    // تم إلغاء زر حفظ كلمة المرور المنفصل لأن الحفظ أصبح موحداً مع اسم المكتب
     (async ()=>{
         const input = document.getElementById('app-password-input');
         if (!input) return;

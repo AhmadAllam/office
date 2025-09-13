@@ -287,40 +287,22 @@ main {
 
 /* Enhanced card hover effects - Beautiful without internet */
 .menu-card {
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.2s ease;
     border: 2px solid rgba(168, 85, 247, 0.3);
     position: relative;
     overflow: hidden;
-}
-
-.menu-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.6s ease;
-}
-
-.menu-card:hover::before {
-    left: 100%;
+    min-height: 100px;
+    padding: 1rem !important;
 }
 
 .menu-card:hover {
-    transform: translateY(-6px) scale(1.03);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
-                0 0 25px rgba(255, 215, 0, 0.3),
-                inset 0 2px 0 rgba(255, 215, 0, 0.2);
-    border-color: #fbbf24;
-    filter: brightness(1.15);
+    background-color: #dcfce7; /* green-100 */
+    border-color: #22c55e; /* green-500 */
+    transform: translateY(-2px);
 }
 
 .menu-card:hover .icon-container {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    filter: brightness(1.2) saturate(1.3);
+    transform: scale(1.1);
 }
 
 .icon-container {
@@ -1950,4 +1932,42 @@ body.form-active .mobile-sidebar-toggle {
         margin: 0 !important;
         z-index: 9999 !important;
     }
+}
+
+/* Lightweight full-color highlight for main page menu buttons */
+.menu-card {
+    will-change: background-color, border-color;
+}
+
+/* Hover and keyboard focus: make the whole card clearly highlighted */
+.menu-card:hover,
+.menu-card:focus-visible {
+    background-color: #e8f0fe !important; /* Light blue */
+    border-color: #93c5fd !important;     /* Blue 300 */
+    color: #1f2937 !important;            /* Dark text for contrast */
+    transform: none !important;
+    box-shadow: none !important;
+    outline: 2px solid #60a5fa;           /* Focus ring for keyboard users */
+    outline-offset: 2px;
+}
+
+/* Ensure inner text and icon are readable on highlight */
+.menu-card:hover h3,
+.menu-card:hover p,
+.menu-card:hover .material-symbols-outlined,
+.menu-card:focus-visible h3,
+.menu-card:focus-visible p,
+.menu-card:focus-visible .material-symbols-outlined {
+    color: #1f2937 !important;
+}
+
+/* Subtle tweak to the small icon container */
+.menu-card:hover > .w-12.h-12,
+.menu-card:focus-visible > .w-12.h-12 {
+    background-color: rgba(37, 99, 235, 0.08) !important; /* Very light blue tint */
+}
+
+/* Disable the global heavy hover ripple and transforms for these cards */
+.menu-card::before {
+    display: none !important;
 }

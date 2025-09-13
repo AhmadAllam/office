@@ -504,6 +504,116 @@ async function getTodaySessionsCount() {
     });
 }
 
+// حساب جلسات الخبراء غداً
+async function getTomorrowExpertSessionsCount() {
+    return new Promise((resolve, reject) => {
+        if (!db) return reject("DB not initialized");
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowString = tomorrow.toISOString().split('T')[0];
+
+        const transaction = db.transaction(['expertSessions'], 'readonly');
+        const store = transaction.objectStore('expertSessions');
+        const request = store.openCursor();
+        let count = 0;
+
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+                if (cursor.value.sessionDate === tomorrowString) count++;
+                cursor.continue();
+            } else {
+                resolve(count);
+            }
+        };
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+// حساب جلسات الخبراء اليوم
+async function getTodayExpertSessionsCount() {
+    return new Promise((resolve, reject) => {
+        if (!db) return reject("DB not initialized");
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+
+        const transaction = db.transaction(['expertSessions'], 'readonly');
+        const store = transaction.objectStore('expertSessions');
+        const request = store.openCursor();
+        let count = 0;
+
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+                if (cursor.value.sessionDate === todayString) count++;
+                cursor.continue();
+            } else {
+                resolve(count);
+            }
+        };
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+// ---------------------------------------------
+// استرجاع تفاصيل مبسطة حسب التاريخ (لعرضها في نافذة الإشعارات)
+// ---------------------------------------------
+function getRecordsByDate(storeName, dateField, dateString, limit = 5) {
+    return new Promise((resolve, reject) => {
+        if (!db) return reject("DB not initialized");
+        const tx = db.transaction([storeName], 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.openCursor();
+        const out = [];
+        req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+                const v = cursor.value || {};
+                if (v[dateField] === dateString) {
+                    out.push(v);
+                    if (out.length >= limit) {
+                        resolve(out);
+                        return;
+                    }
+                }
+                cursor.continue();
+            } else {
+                resolve(out);
+            }
+        };
+        req.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function getTodaySessions(limit = 5) {
+    const d = new Date();
+    const s = d.toISOString().split('T')[0];
+    return getRecordsByDate('sessions', 'sessionDate', s, limit);
+}
+async function getTomorrowSessions(limit = 5) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const s = d.toISOString().split('T')[0];
+    return getRecordsByDate('sessions', 'sessionDate', s, limit);
+}
+async function getTodayExpertSessions(limit = 5) {
+    const d = new Date();
+    const s = d.toISOString().split('T')[0];
+    return getRecordsByDate('expertSessions', 'sessionDate', s, limit);
+}
+async function getTomorrowExpertSessions(limit = 5) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const s = d.toISOString().split('T')[0];
+    return getRecordsByDate('expertSessions', 'sessionDate', s, limit);
+}
+async function getTomorrowAdministrative(limit = 5) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const s = d.toISOString().split('T')[0];
+    return getRecordsByDate('administrative', 'dueDate', s, limit);
+}
+
 // دوال الحسابات
 function addAccount(accountData) {
     return new Promise((resolve, reject) => {

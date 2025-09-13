@@ -2,26 +2,69 @@ async function updateCountersInHeader() {
     try {
         const clientCount = await getCount('clients');
         const caseCount = await getCount('cases');
+        const todaySessionsCount = await getTodaySessionsCount();
         const tomorrowSessionsCount = await getTomorrowSessionsCount();
+        const todayExpertSessionsCount = await getTodayExpertSessionsCount();
+        const tomorrowExpertSessionsCount = await getTomorrowExpertSessionsCount();
         const tomorrowAdministrativeCount = await getTomorrowAdministrativeCount();
         
         const clientCountElement = document.getElementById('client-count');
         const lawsuitCountElement = document.getElementById('lawsuit-count');
         const tomorrowSessionsCountElement = document.getElementById('tomorrow-sessions-count');
         const tomorrowAdministrativeCountElement = document.getElementById('tomorrow-administrative-count');
+        // Mobile mirrors
+        const clientCountMobile = document.getElementById('client-count-mobile');
+        const lawsuitCountMobile = document.getElementById('lawsuit-count-mobile');
+        const tomorrowSessionsCountMobile = document.getElementById('tomorrow-sessions-count-mobile');
+        const tomorrowAdministrativeCountMobile = document.getElementById('tomorrow-administrative-count-mobile');
+        const outstandingAmountElement = document.getElementById('outstanding-amount');
+        const notificationsBadgeDesktop = document.getElementById('notifications-badge');
+        const notificationsBadgeMobile = document.getElementById('notifications-badge-mobile');
         
         if (clientCountElement) clientCountElement.textContent = clientCount.toString();
+        if (clientCountMobile) clientCountMobile.textContent = clientCount.toString();
         if (lawsuitCountElement) lawsuitCountElement.textContent = caseCount.toString();
+        if (lawsuitCountMobile) lawsuitCountMobile.textContent = caseCount.toString();
         if (tomorrowSessionsCountElement) {
             tomorrowSessionsCountElement.textContent = tomorrowSessionsCount > 0 ? tomorrowSessionsCount.toString() : '0';
+        }
+        if (tomorrowSessionsCountMobile) {
+            tomorrowSessionsCountMobile.textContent = tomorrowSessionsCount > 0 ? tomorrowSessionsCount.toString() : '0';
         }
         if (tomorrowAdministrativeCountElement) {
             tomorrowAdministrativeCountElement.textContent = tomorrowAdministrativeCount > 0 ? tomorrowAdministrativeCount.toString() : '0';
         }
+        if (tomorrowAdministrativeCountMobile) {
+            tomorrowAdministrativeCountMobile.textContent = tomorrowAdministrativeCount > 0 ? tomorrowAdministrativeCount.toString() : '0';
+        }
+        if (outstandingAmountElement) {
+            outstandingAmountElement.textContent = '2500'; // يمكن تحديث هذا لاحقاً من قاعدة البيانات
+        }
+        
+        // تحديث بادج الإشعارات للجلسات (اليوم + الغد) + جلسات الخبراء (اليوم + الغد) + أعمال الغد
+        const notifCount = (todaySessionsCount || 0)
+            + (tomorrowSessionsCount || 0)
+            + (todayExpertSessionsCount || 0)
+            + (tomorrowExpertSessionsCount || 0)
+            + (tomorrowAdministrativeCount || 0);
+        [notificationsBadgeDesktop, notificationsBadgeMobile].forEach(badge => {
+            if (!badge) return;
+            if (notifCount > 0) {
+                badge.style.display = 'inline-block';
+                badge.textContent = String(notifCount);
+            } else {
+                badge.style.display = 'none';
+                badge.textContent = '';
+            }
+        });
+        
+        // تحديث أشرطة التقدم
+        updateProgressBars(clientCount, caseCount, tomorrowSessionsCount, tomorrowAdministrativeCount);
         const isHomePage = /(^|\\|\/)index\.html$/.test(window.location.pathname) || window.location.pathname === '/' || window.location.pathname === '';
         const hasSessions = tomorrowSessionsCount > 0;
+        const hasExpert = tomorrowExpertSessionsCount > 0;
         const hasAdmin = tomorrowAdministrativeCount > 0;
-        const hasAnyTomorrow = hasSessions || hasAdmin;
+        const hasAnyTomorrow = hasSessions || hasExpert || hasAdmin;
         if (isHomePage && hasAnyTomorrow) {
             // Avoid playing audio before unlocking if password overlay is active
             const isLocked = !!document.getElementById('password-overlay');
@@ -32,10 +75,18 @@ async function updateCountersInHeader() {
                         const v = await getSetting('tomorrowAudioMode');
                         if (v === 'off' || v === 'always' || v === 'hourly' || v === '2h' || v === '3h') mode = v;
                     } catch (e) {}
+                    // Respect global mute setting
+                    try {
+                        const muted = await getSetting('notificationsMuted');
+                        if (muted === true || muted === 'true') mode = 'off';
+                    } catch (e) {}
                     if (mode !== 'off') {
                         let src = '';
                         let key = '';
-                        if (hasSessions && hasAdmin) { src = 'audio/s-m.mp3'; key = 'tomorrowCombinedAudioLast'; }
+                        // أولوية الأصوات لو في خبراء بكرة
+                        if (hasExpert && (hasSessions || hasAdmin)) { src = 'audio/gs.mp3'; key = 'tomorrowExpertCombinedAudioLast'; }
+                        else if (hasExpert) { src = 'audio/gs.mp3'; key = 'tomorrowExpertAudioLast'; }
+                        else if (hasSessions && hasAdmin) { src = 'audio/s-m.mp3'; key = 'tomorrowCombinedAudioLast'; }
                         else if (hasSessions) { src = 'audio/s.mp3'; key = 'tomorrowAudioLast'; }
                         else { src = 'audio/m.mp3'; key = 'tomorrowAdminAudioLast'; }
                         if (mode === 'always') {
@@ -201,7 +252,236 @@ async function enforceAppPassword() {
 }
 // Copy-on-click for header title + inject global quick home button
 window.addEventListener('DOMContentLoaded', async () => {
-    await enforceAppPassword();
+    try {
+        // Prefer the visible/mobile notifications button when both exist
+        function isVisible(el){
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+            const rect = el.getBoundingClientRect();
+            return (rect.width > 0 && rect.height > 0);
+        }
+        function getBellBtn(){
+            const mobile = document.getElementById('notifications-btn-mobile');
+            const desktop = document.getElementById('notifications-btn');
+            if (isVisible(mobile)) return mobile;
+            if (isVisible(desktop)) return desktop;
+            return mobile || desktop;
+        }
+        const btn = getBellBtn();
+        const menu = document.getElementById('notifications-menu');
+        const list = document.getElementById('notifications-list');
+        const toggleMuteBtn = document.getElementById('toggle-mute-btn');
+        const viewBtn = document.getElementById('view-notifications-btn');
+
+        // Popover elements
+        const popover = document.getElementById('notifications-popover');
+        const popoverList = document.getElementById('notifications-popover-list');
+        const popoverToggleMuteBtn = document.getElementById('popover-toggle-mute-btn');
+
+        // Ensure DB is initialized before reading settings
+        try { if (typeof initDB === 'function') await initDB(); } catch (e) {}
+
+        let outsideHandlerBound = false;
+
+        // Update bell icon globally based on mute state
+        function setNotificationsBellMutedIcon(muted) {
+            try {
+                const bellIcon = btn ? btn.querySelector('.material-symbols-outlined') : null;
+                if (bellIcon) bellIcon.textContent = (muted === true || muted === 'true') ? 'notifications_off' : 'notifications';
+            } catch (e) {}
+        }
+        window.setNotificationsBellMutedIcon = setNotificationsBellMutedIcon;
+
+        async function refreshMuteLabel() {
+            try {
+                const muted = await getSetting('notificationsMuted');
+                const label = (muted === true || muted === 'true') ? 'إلغاء الكتم' : 'كتم';
+                if (toggleMuteBtn) toggleMuteBtn.textContent = label;
+                if (popoverToggleMuteBtn) popoverToggleMuteBtn.textContent = label;
+                setNotificationsBellMutedIcon(muted);
+            } catch (e) {
+                if (toggleMuteBtn) toggleMuteBtn.textContent = 'كتم';
+                if (popoverToggleMuteBtn) popoverToggleMuteBtn.textContent = 'كتم';
+                setNotificationsBellMutedIcon(false);
+            }
+        }
+        // تزامن أولي عند تحميل الصفحة لضبط الأيقونة وحالة الأزرار
+        await refreshMuteLabel();
+
+        async function buildNotificationsList(targetEl) {
+            if (!targetEl) return;
+            targetEl.innerHTML = '';
+            try {
+                const todaySessions = await getTodaySessionsCount();
+                const tomorrowSessions = await getTomorrowSessionsCount();
+                const todayExperts = await getTodayExpertSessionsCount();
+                const tomorrowExperts = await getTomorrowExpertSessionsCount();
+                const tomorrowAdmin = await getTomorrowAdministrativeCount();
+                const items = [];
+                // عناصر مختلطة مع تفاصيل بسيطة
+                const todaySessionsList = await getTodaySessions(3);
+                const tomorrowSessionsList = await getTomorrowSessions(3);
+                const todayExpertsList = await getTodayExpertSessions(3);
+                const tomorrowExpertsList = await getTomorrowExpertSessions(3);
+                const tomorrowAdminList = await getTomorrowAdministrative(3);
+
+                const fmt = (d) => {
+                    try { return new Date(d).toLocaleDateString('ar-EG'); } catch(e) { return d || ''; }
+                };
+
+                if (todaySessionsList.length) {
+                    items.push({
+                        icon: 'event',
+                        title: `جلسات اليوم (${todaySessionsList.length})`,
+                        lines: todaySessionsList.map(s => `دعوى ${s.caseNumber || s.caseId || ''} - ${fmt(s.sessionDate)}`)
+                    });
+                }
+                if (tomorrowSessionsList.length) {
+                    items.push({
+                        icon: 'event_upcoming',
+                        title: `جلسات الغد (${tomorrowSessionsList.length})`,
+                        lines: tomorrowSessionsList.map(s => `دعوى ${s.caseNumber || s.caseId || ''} - ${fmt(s.sessionDate)}`)
+                    });
+                }
+                if (todayExpertsList.length) {
+                    items.push({
+                        icon: 'groups',
+                        title: `خبراء اليوم (${todayExpertsList.length})`,
+                        lines: todayExpertsList.map(s => `${s.sessionTime || ''} - ${fmt(s.sessionDate)}`)
+                    });
+                }
+                if (tomorrowExpertsList.length) {
+                    items.push({
+                        icon: 'groups',
+                        title: `خبراء الغد (${tomorrowExpertsList.length})`,
+                        lines: tomorrowExpertsList.map(s => `${s.sessionTime || ''} - ${fmt(s.sessionDate)}`)
+                    });
+                }
+                if (tomorrowAdminList.length) {
+                    items.push({
+                        icon: 'assignment',
+                        title: `أعمال الغد (${tomorrowAdminList.length})`,
+                        lines: tomorrowAdminList.map(a => `${a.title || a.task || 'عمل'} - ${fmt(a.dueDate)}`)
+                    });
+                }
+
+                if (items.length === 0) {
+                    targetEl.innerHTML = '<div class="text-gray-500 text-center py-4">لا توجد إشعارات</div>';
+                    return;
+                }
+                for (const it of items) {
+                    const block = document.createElement('div');
+                    block.className = 'py-2';
+                    const header = document.createElement('div');
+                    header.className = 'flex items-center gap-2 px-2 py-1';
+                    header.innerHTML = `<span class=\"material-symbols-outlined text-gray-600 text-base\">${it.icon}</span><span class=\"font-bold\">${it.title}</span>`;
+                    block.appendChild(header);
+                    it.lines.slice(0,3).forEach(line => {
+                        const li = document.createElement('div');
+                        li.className = 'pl-7 pr-2 py-1 text-gray-700';
+                        li.textContent = line;
+                        block.appendChild(li);
+                    });
+                    targetEl.appendChild(block);
+                }
+            } catch (err) {
+                targetEl.innerHTML = '<div class="text-gray-500 text-center py-8">لا توجد إشعارات</div>';
+            }
+        }
+
+        function toggleMenu() {
+            if (!menu) return;
+            const isHidden = menu.classList.contains('hidden');
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                buildNotificationsList(list);
+                refreshMuteLabel();
+                if (!outsideHandlerBound) {
+                    outsideHandlerBound = true;
+                    document.addEventListener('click', outsideHandler, true);
+                }
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+        function outsideHandler(e) {
+            if (!menu) return;
+            const target = e.target;
+            if (menu.contains(target) || (btn && btn.contains(target))) return;
+            menu.classList.add('hidden');
+        }
+
+        // Bell click -> toggle anchored popover under the button (disabled if portal mode is enabled)
+        if (!window.USE_NOTIFICATIONS_PORTAL) {
+            if (btn) {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!popover) return;
+                    const isHidden = popover.classList.contains('hidden');
+                    // close menu if exists
+                    if (menu) menu.classList.add('hidden');
+                    if (isHidden) {
+                        await buildNotificationsList(popoverList);
+                        await refreshMuteLabel();
+                        popover.classList.remove('hidden');
+                        if (!outsideHandlerBound) {
+                            outsideHandlerBound = true;
+                            document.addEventListener('click', outsideHandler, true);
+                        }
+                    } else {
+                        popover.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Close when clicking outside
+            function outsideHandler(e) {
+                if (!popover) return;
+                const target = e.target;
+                if (popover.contains(target) || (btn && btn.contains(target))) return;
+                popover.classList.add('hidden');
+            }
+
+            // Popover mute toggle
+            if (popoverToggleMuteBtn) {
+                popoverToggleMuteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    try {
+                        const muted = await getSetting('notificationsMuted');
+                        const next = !(muted === true || muted === 'true');
+                        await setSetting('notificationsMuted', next);
+                        await refreshMuteLabel();
+                        setNotificationsBellMutedIcon(next);
+                        if (typeof showToast === 'function') showToast(next ? 'تم كتم الإشعارات' : 'تم إلغاء الكتم', 'info');
+                    } catch (err) {}
+                });
+            }
+        }
+
+        // Keep old dropdown mute and view handlers (if ever used elsewhere)
+        if (toggleMuteBtn) {
+            toggleMuteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                try {
+                    const muted = await getSetting('notificationsMuted');
+                    const next = !(muted === true || muted === 'true');
+                    await setSetting('notificationsMuted', next);
+                    await refreshMuteLabel();
+                    if (typeof showToast === 'function') showToast(next ? 'تم كتم الإشعارات' : 'تم إلغاء الكتم', 'info');
+                } catch (err) {}
+            });
+        }
+        if (viewBtn) {
+            viewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof showToast === 'function') showToast('سيتم عرض جميع الإشعارات هنا لاحقاً');
+            });
+        }
+    } catch (e) {}
+    if (typeof enforceAppPassword === 'function') {
+        await enforceAppPassword();
+    }
 
     // Add quick Home button on the far side of the title bar if header exists
     try {
@@ -293,3 +573,33 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
+function updateProgressBars(clientCount, caseCount, tomorrowSessionsCount, tomorrowAdministrativeCount) {
+    // تحديث شريط تقدم الموكلين
+    const clientProgress = document.getElementById('client-progress');
+    if (clientProgress) {
+        const clientPercentage = Math.min((clientCount / 20) * 100, 100); // افتراض أن الحد الأقصى 20 موكل
+        clientProgress.style.width = `${clientPercentage}%`;
+    }
+    
+    // تحديث شريط تقدم القضايا
+    const lawsuitProgress = document.getElementById('lawsuit-progress');
+    if (lawsuitProgress) {
+        const lawsuitPercentage = Math.min((caseCount / 20) * 100, 100); // افتراض أن الحد الأقصى 20 قضية
+        lawsuitProgress.style.width = `${lawsuitPercentage}%`;
+    }
+    
+    // تحديث شريط تقدم جلسات الغد
+    const sessionsProgress = document.getElementById('sessions-progress');
+    if (sessionsProgress) {
+        const sessionsPercentage = Math.min((tomorrowSessionsCount / 10) * 100, 100); // افتراض أن الحد الأقصى 10 جلسات
+        sessionsProgress.style.width = `${sessionsPercentage}%`;
+    }
+    
+    // تحديث شريط تقدم أعمال الغد
+    const administrativeProgress = document.getElementById('administrative-progress');
+    if (administrativeProgress) {
+        const administrativePercentage = Math.min((tomorrowAdministrativeCount / 10) * 100, 100); // افتراض أن الحد الأقصى 10 أعمال
+        administrativeProgress.style.width = `${administrativePercentage}%`;
+    }
+}
