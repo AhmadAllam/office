@@ -18,5 +18,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
     copyPackToDesktop: () => ipcRenderer.invoke('copy-pack-to-desktop'),
 
+    // APIs التحديث
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    downloadAndInstallUpdate: () => ipcRenderer.invoke('download-and-install-update'),
+    
+    // مستمعي أحداث التحديث
+    onUpdateChecking: (callback) => ipcRenderer.on('update-checking', callback),
+    onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
+    onUpdateNotAvailable: (callback) => ipcRenderer.on('update-not-available', callback),
+    onUpdateDownloadProgress: (callback) => ipcRenderer.on('update-download-progress', callback),
+    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
+    onUpdateError: (callback) => ipcRenderer.on('update-error', callback),
+
     onOpenWebsiteTab: (callback) => ipcRenderer.on('open-website-tab', callback)
 });

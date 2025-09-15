@@ -179,6 +179,60 @@ function displaySettingsModal() {
                     </div>
                 </div>
 
+                <!-- التحديثات -->
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
+                    <div class="text-center mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                            <i class="ri-download-cloud-2-line text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">التحديثات</h3>
+                        <p class="text-sm text-gray-600">فحص وتحديث التطبيق</p>
+                    </div>
+                    <div class="space-y-3">
+                        <!-- حالة التحديث -->
+                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-semibold text-blue-800">حالة التحديث</span>
+                                <span class="text-xs text-gray-500">الإصدار الح��لي: 1.0.0</span>
+                            </div>
+                            <div class="mb-3">
+                                <span id="update-status-text" class="text-sm text-gray-600 flex items-center gap-1">
+                                    <i class="ri-question-line"></i>
+                                    لم يتم الفحص
+                                </span>
+                            </div>
+                            
+                            <!-- معلومات التحديث -->
+                            <div id="update-info" class="hidden mb-3 p-2 bg-green-50 rounded border border-green-200">
+                                <div class="text-sm font-semibold text-green-800 mb-1" id="update-version"></div>
+                                <div class="text-xs text-green-600" id="update-notes"></div>
+                            </div>
+                            
+                            <!-- شريط التقدم -->
+                            <div id="update-progress-container" class="hidden mb-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs text-blue-600">جاري التحميل...</span>
+                                    <span id="update-progress-text" class="text-xs text-blue-600">0%</span>
+                                </div>
+                                <div class="w-full bg-blue-200 rounded-full h-2">
+                                    <div id="update-progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button id="check-updates-btn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                                    <i class="ri-refresh-line text-lg"></i>
+                                    فحص التحديثات
+                                </button>
+                                <button id="install-update-btn" class="hidden flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                                    <i class="ri-download-line text-lg"></i>
+                                    تحديث الآن
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                                 
             </div>
         </div>
@@ -575,6 +629,23 @@ function displaySettingsModal() {
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreData);
     document.getElementById('add-sample-data-btn').addEventListener('click', handleAddSampleData);
     document.getElementById('delete-all-data-btn').addEventListener('click', handleFullWipe);
+    
+    // معالجات التحديث
+    document.getElementById('check-updates-btn').addEventListener('click', () => {
+        if (window.updaterAPI) {
+            window.updaterAPI.checkForUpdates();
+        } else {
+            showToast('نظام التحديثات غير متاح', 'warning');
+        }
+    });
+    
+    document.getElementById('install-update-btn').addEventListener('click', () => {
+        if (window.updaterAPI) {
+            window.updaterAPI.downloadAndInstallUpdate();
+        } else {
+            showToast('نظام التحديثات غير متاح', 'warning');
+        }
+    });
     (function initAutoBackupToggle() {
         const autoToggle = document.getElementById('toggle-auto-backup');
         const track = document.getElementById('auto-backup-track');

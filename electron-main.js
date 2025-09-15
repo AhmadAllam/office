@@ -23,6 +23,21 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// إضافة electron-updater
+const { autoUpdater } = require('electron-updater');
+
+// إعداد التحديث
+autoUpdater.checkForUpdatesAndNotify = false; // تعطيل الفحص التلقائي
+autoUpdater.autoDownload = false; // تعطيل التحميل التلقائي
+autoUpdater.autoInstallOnAppQuit = false; // تعطيل التثبيت التلقائي
+
+// إعداد مستودع GitHub للتحديثات
+autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'AhmadAllam',
+    repo: 'lawyers-app'
+});
+
 let mainWindow;
 
 function createWindow() {
@@ -696,6 +711,98 @@ if (!gotTheLock && app) {
                 success: false, 
                 message: 'حدث خطأ أثناء نسخ المجلد: ' + error.message 
             };
+        }
+    });
+
+    // ===== معالجات التحديث =====
+    
+    // فحص التحديثات
+    ipcMain.handle('check-for-updates', async () => {
+        try {
+            const updateInfo = await autoUpdater.checkForUpdates();
+            if (updateInfo && updateInfo.updateInfo) {
+                return {
+                    success: true,
+                    hasUpdate: true,
+                    version: updateInfo.updateInfo.version,
+                    releaseNotes: updateInfo.updateInfo.releaseNotes || 'تحديثات وتحسينات عامة',
+                    releaseDate: updateInfo.updateInfo.releaseDate
+                };
+            } else {
+                return {
+                    success: true,
+                    hasUpdate: false,
+                    message: 'التطبيق محدث لأحدث إصدار'
+                };
+            }
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message || 'فشل في فحص التحديثات'
+            };
+        }
+    });
+
+    // تحميل وتثبيت التحديث
+    ipcMain.handle('download-and-install-update', async () => {
+        try {
+            // تحميل التحديث
+            await autoUpdater.downloadUpdate();
+            
+            // تثبيت التحديث وإعادة التشغيل
+            autoUpdater.quitAndInstall(false, true);
+            
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message || 'فشل في تحميل أو تثبيت التحديث'
+            };
+        }
+    });
+
+    // أحداث التحديث
+    autoUpdater.on('checking-for-update', () => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-checking');
+        }
+    });
+
+    autoUpdater.on('update-available', (info) => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-available', {
+                version: info.version,
+                releaseNotes: info.releaseNotes,
+                releaseDate: info.releaseDate
+            });
+        }
+    });
+
+    autoUpdater.on('update-not-available', () => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-not-available');
+        }
+    });
+
+    autoUpdater.on('download-progress', (progressObj) => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-download-progress', {
+                percent: Math.round(progressObj.percent),
+                transferred: progressObj.transferred,
+                total: progressObj.total
+            });
+        }
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-downloaded');
+        }
+    });
+
+    autoUpdater.on('error', (error) => {
+        if (mainWindow) {
+            mainWindow.webContents.send('update-error', error.message);
         }
     });
 }

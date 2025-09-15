@@ -3,20 +3,34 @@
   "version": "1.0.0",
   "description": "Lawyers Egypt Digital - Law Office Management App",
   "main": "electron-main.js",
+  "homepage": "https://github.com/AhmadAllam/lawyers-app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AhmadAllam/lawyers-app.git"
+  },
   "scripts": {
     "start": "electron .",
     "dev": "electronmon .",
     "build": "electron-builder",
     "build-win": "electron-builder --win",
+    "build-win-64": "electron-builder --win --x64",
+    "build-win-32": "electron-builder --win --ia32",
+    "build-legacy": "electron-builder --config builder-legacy.json --win",
+    "build-modern": "electron-builder --config builder-modern.json --win",
+    "build-both": "npm run build-modern && npm run build-legacy",
+    "build-interactive": "node build.js",
     "pack": "electron-packager . \"lawyer\" --platform=win32 --arch=x64 --out=dist --overwrite",
+    "pack-32": "electron-packager . \"lawyer\" --platform=win32 --arch=ia32 --out=dist --overwrite",
+    "pack-both": "electron-packager . \"lawyer\" --platform=win32 --arch=x64,ia32 --out=dist --overwrite",
     "pack-law": "if exist \"law\" rmdir /s /q \"law\" && electron-packager . law --platform=win32 --arch=x64 --out=. --overwrite --asar=false --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-win32-x64\" ren \"law-win32-x64\" \"law\"",
+    "pack-law-32": "if exist \"law-32\" rmdir /s /q \"law-32\" && electron-packager . law-32 --platform=win32 --arch=ia32 --out=. --overwrite --asar=false --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-32-win32-ia32\" ren \"law-32-win32-ia32\" \"law-32\"",
     "dist": "electron-builder --publish=never"
   },
   "author": "Ahmad - Egypt",
   "license": "MIT",
   "devDependencies": {
-    "electron": "37.4.0",
-    "electron-builder": "^25.0.0",
+    "electron": "^22.3.27",
+    "electron-builder": "^24.13.3",
     "electronmon": "^2.0.3"
   },
   "build": {
@@ -30,12 +44,33 @@
       "!node_modules/**/*"
     ],
     "win": {
-      "target": "portable",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
       "requestedExecutionLevel": "asInvoker",
-      "sign": false
+      "sign": false,
+      "icon": "icon.ico"
     },
-    "portable": {
-      "artifactName": "lawyer.exe"
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "مكتبي",
+      "artifactName": "lawyer-modern-setup-${version}.exe"
     }
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
   }
 }
