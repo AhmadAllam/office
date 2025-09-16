@@ -19,11 +19,11 @@
     "build-modern": "electron-builder --config builder-modern.json --win",
     "build-both": "npm run build-modern && npm run build-legacy",
     "build-interactive": "node build.js",
-    "pack": "electron-packager . \"lawyer\" --platform=win32 --arch=x64 --out=dist --overwrite",
-    "pack-32": "electron-packager . \"lawyer\" --platform=win32 --arch=ia32 --out=dist --overwrite",
-    "pack-both": "electron-packager . \"lawyer\" --platform=win32 --arch=x64,ia32 --out=dist --overwrite",
-    "pack-law": "if exist \"law\" rmdir /s /q \"law\" && electron-packager . law --platform=win32 --arch=x64 --out=. --overwrite --asar=false --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-win32-x64\" ren \"law-win32-x64\" \"law\"",
-    "pack-law-32": "if exist \"law-32\" rmdir /s /q \"law-32\" && electron-packager . law-32 --platform=win32 --arch=ia32 --out=. --overwrite --asar=false --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-32-win32-ia32\" ren \"law-32-win32-ia32\" \"law-32\"",
+    "pack": "electron-packager . \"lawyer\" --platform=win32 --arch=x64 --out=dist --overwrite --asar",
+    "pack-32": "electron-packager . \"lawyer\" --platform=win32 --arch=ia32 --out=dist --overwrite --asar",
+    "pack-both": "electron-packager . \"lawyer\" --platform=win32 --arch=x64,ia32 --out=dist --overwrite --asar",
+    "pack-law": "if exist \"law\" rmdir /s /q \"law\" && electron-packager . law --platform=win32 --arch=x64 --out=. --overwrite --asar=true --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-win32-x64\" ren \"law-win32-x64\" \"law\"",
+    "pack-law-32": "if exist \"law-32\" rmdir /s /q \"law-32\" && electron-packager . law-32 --platform=win32 --arch=ia32 --out=. --overwrite --asar=true --executable-name=lawyer --app-bundle-id=com.lawyers.egypt.digital --app-version=1.0.0 --build-version=1.0.0 --appCopyright=\"Ahmad - Egypt\" --win32metadata.CompanyName=\"Lawyers Egypt Digital\" --win32metadata.ProductName=\"lawyer\" --win32metadata.FileDescription=\"Law Office Management App\" && if exist \"law-32-win32-ia32\" ren \"law-32-win32-ia32\" \"law-32\"",
     "dist": "electron-builder --publish=never"
   },
   "author": "Ahmad - Egypt",
@@ -41,7 +41,14 @@
     },
     "files": [
       "**/*",
-      "!node_modules/**/*"
+      "!node_modules/**/*",
+      "node_modules/electron-updater/**/*"
+    ],
+    "asar": {
+      "smartUnpack": true
+    },
+    "asarUnpack": [
+      "**/node_modules/electron-updater/**/*"
     ],
     "win": {
       "target": [

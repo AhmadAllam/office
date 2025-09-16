@@ -179,6 +179,51 @@ function displaySettingsModal() {
                     </div>
                 </div>
 
+                <!-- مسار مجلد الموكلين -->
+                <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
+                    <div class="text-center mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-md">
+                            <i class="ri-folder-settings-line text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-blue-700 mb-1">مسار حفظ البيانات</h3>
+                        <p class="text-sm text-gray-600">تخصيص مكان حفظ ملفات الموكلين والمكتبة القانونية</p>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="ri-information-line text-blue-600"></i>
+                                <span class="text-sm font-semibold text-blue-800">معلومات</span>
+                            </div>
+                            <p class="text-xs text-blue-700">
+                                افتراضي: سطح المكتب/مكتبي/ملفات الموكلين
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1 text-right">المسار الحالي</label>
+                            <div class="relative">
+                                <input type="text" id="clients-path-input" 
+                                       class="w-full px-4 py-3 border-3 border-gray-400 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-600 text-sm bg-gray-50 transition-all shadow-sm" 
+                                       placeholder="لم يتم تحديد مسار مخصص"
+                                       readonly
+                                       style="font-size: 14px;">
+                                <i class="ri-folder-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button id="choose-clients-path-btn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                                <i class="ri-folder-open-line text-lg"></i>
+                                اختيار مسار
+                            </button>
+                            <button id="reset-clients-path-btn" class="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+                                <i class="ri-refresh-line text-lg"></i>
+                                إعادة تعيين
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- التحديثات -->
                 <div class="bg-white border-4 border-black rounded-xl p-3 shadow-lg transition-all h-fit">
                     <div class="text-center mb-4">
@@ -193,7 +238,7 @@ function displaySettingsModal() {
                         <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm font-semibold text-blue-800">حالة التحديث</span>
-                                <span class="text-xs text-gray-500">الإصدار الح��لي: 1.0.0</span>
+                                <span class="text-xs text-gray-500">الإصدار الحالي: 1.0.0</span>
                             </div>
                             <div class="mb-3">
                                 <span id="update-status-text" class="text-sm text-gray-600 flex items-center gap-1">
@@ -366,12 +411,19 @@ function displaySettingsModal() {
     document.getElementById('restore-data-btn').addEventListener('click', handleRestoreDataClick);
     document.getElementById('copy-pack-btn').addEventListener('click', handleCopyPackToDesktop);
     
+    // إعدادات مسار مجلد الموكلين
+    document.getElementById('choose-clients-path-btn').addEventListener('click', handleChooseClientsPath);
+    document.getElementById('reset-clients-path-btn').addEventListener('click', handleResetClientsPath);
+    
     // إعدادات المزامنة
         document.getElementById('sync-now-btn').addEventListener('click', handleSyncNow);
     document.getElementById('sync-client-id').addEventListener('input', handleSyncIdInput);
         
     // تحميل إعدادات المزامنة
     loadSyncSettings();
+    
+    // تحميل إعدادات مسار مجلد الموكلين
+    loadClientsPathSettings();
     // إخفاء زر حفظ المعرف وإزالة مزامنة عند الإغلاق
     setTimeout(() => {
         try {
@@ -601,34 +653,36 @@ function displaySettingsModal() {
             }
         });
 
-        // إعادة ترتيب الكروت بصريًا حسب تسلسل محدد دون المساس بالوظائف
+        // إعادة ترتيب بسيطة: وضع "التحديثات" بعد "الترخيص" فقط
         const reorderSettingsCards = () => {
             try {
                 const container = document.querySelector('#modal-content .grid');
                 if (!container) return;
+                const cards = Array.from(container.children);
                 const getTitle = (el) => {
                     const h3 = el.querySelector('h3');
-                    return h3 && h3.textContent ? h3.textContent.trim() : '';
+                    return h3 && (h3.textContent || '').trim();
                 };
-                // الصف الأول: الاسم وكلمة المرور، مزامنة البيانات، الترخيص، النسخ الاحتياطي
-                // الصف الثاني: البيانات التجريبية، الصيغ الجاهزة، التنبيهات الصوتيه، استيراد بيانات اكسس
-                const desiredOrder = ['الاسم وكلمة المرور','مزامنة البيانات','الترخيص','النسخ الاحتياطي','البيانات التجريبية','الصيغ الجاهزة','التنبيهات الصوتيه','استيراد بيانات اكسس'];
-                const cards = Array.from(container.children);
-                const used = new Set();
-                desiredOrder.forEach(title => {
-                    const el = cards.find(c => getTitle(c) === title);
-                    if (el) { container.appendChild(el); used.add(el); }
-                });
-                // ضع أي بطاقات أخرى غير مذكورة في الترتيب بعد المذكورة
-                cards.forEach(c => { if (!used.has(c)) container.appendChild(c); });
+                const updatesEl = cards.find(c => getTitle(c) === 'التحديثات');
+                const licenseEl = cards.find(c => (getTitle(c) || '').includes('الترخيص'));
+                if (updatesEl && licenseEl) {
+                    const next = licenseEl.nextElementSibling;
+                    if (next !== updatesEl) {
+                        container.insertBefore(updatesEl, next);
+                    }
+                }
             } catch (e) {}
         };
-        // مهلة قصيرة للتأكد من اكتمال إدراج كل الكروت الديناميكية
-        setTimeout(reorderSettingsCards, 0);
+        // استدعاءات خفيفة لضمان ظهور "الترخيص" ثم نقل "التحديثات" بعده
+        try {
+            reorderSettingsCards();
+            setTimeout(reorderSettingsCards, 30);
+            setTimeout(reorderSettingsCards, 120);
+        } catch (e) {}
     }
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreData);
     document.getElementById('add-sample-data-btn').addEventListener('click', handleAddSampleData);
-    document.getElementById('delete-all-data-btn').addEventListener('click', handleFullWipe);
+    document.getElementById('delete-all-data-btn').addEventListener('click', handleDeleteAllData);
     
     // معالجات التحديث
     document.getElementById('check-updates-btn').addEventListener('click', () => {
@@ -720,9 +774,22 @@ async function handleAddSampleData() {
 }
 
 async function handleFullWipe() {
-    const ok = confirm('سيتم مسح كل بيانات البرنامج والكاش والتخزين لهذا الموقع. هل أنت متأكد؟');
+    const ok = confirm('سيتم مسح كل بيانات البرنامج. هل أنت متأكد؟');
     if (!ok) return;
     try { if (typeof showToast==='function') showToast('جاري المسح الشامل...', 'info'); } catch (e) {}
+
+    // في تطبيق ��طح المكتب: اكتفِ بحذف قاعدة البيانات وإعادة التحميل لتفادي تجمّد الحقول
+    if (window.electronAPI) {
+        try { await deleteDatabaseQuick(); } catch (e) {}
+        try { localStorage.clear(); } catch (e) {}
+        try { sessionStorage.clear(); } catch (e) {}
+        // إعاد�� تشغيل سريعة عبر Electron لتفادي أي تجمّد في الواجهة
+        try { await window.electronAPI.restartApp(); return; } catch (e) {}
+        setTimeout(() => { window.location.reload(); }, 100);
+        return;
+    }
+
+    // في المتصفح: نفّذ المسح الكامل (قد يستغرق وقتاً)
     try {
         if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
             const regs = await navigator.serviceWorker.getRegistrations();
@@ -761,35 +828,69 @@ async function handleDeleteAllData() {
     const confirmation = confirm('هل أنت متأكد من حذف جميع البيانات؟ سيتم حذف جميع الموكلين والقضايا والجلسات والحسابات نهائياً!');
     if (!confirmation) return;
 
+    // Overlay بسيط لمنع التفاعل وإظهار حالة العمل
+    let overlay = document.getElementById('blocking-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'blocking-overlay';
+        Object.assign(overlay.style, {
+            position: 'fixed', inset: '0', background: 'rgba(255,255,255,0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+        });
+        const box = document.createElement('div');
+        box.id = 'blocking-overlay-text';
+        box.style.cssText = 'background:#fff;border:2px solid #000;padding:14px 18px;border-radius:12px;box-shadow:0 5px 18px rgba(0,0,0,.2);font-weight:bold;color:#1f2937;';
+        box.textContent = 'جارِ المسح الشامل...';
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    } else {
+        overlay.style.display = 'flex';
+        const t = document.getElementById('blocking-overlay-text');
+        if (t) t.textContent = 'جارِ المسح الشامل...';
+    }
+
     try {
-                
-        // محاولة الطريقة الأولى: حذف البيانا�� من كل جدول
-        const success = await clearAllDataFromTables();
-        
-        if (success) {
-            showToast('تم حذف جميع البيانات بنجاح ✅');
-            if (typeof updateCountersInHeader === 'function') {
-                await updateCountersInHeader();
-            }
-            
-            // إعادة تحميل الصفحة بعد ثانية واحدة
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+        // في تطبيق سطح المكتب: احذف قاعدة البيانات مباشرة لتفادي تجمّد الواجهة
+        if (window.electronAPI) {
+            try { await deleteDatabaseQuick(); } catch (e) {}
+            try { localStorage.clear(); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+            // إعادة تشغيل سريعة عبر Electron لتفادي أي تجمّد في الواجهة
+            try { await window.electronAPI.restartApp(); return; } catch (e) {}
+            setTimeout(() => { window.location.reload(); }, 100);
             return;
         }
-        
-        // إذا فشلت الطريقة الأولى، نجرب حذف قاعدة البيانات كاملة
-        await deleteEntireDatabase();
-        
+
+        // في المتصفح: تنظيف الكاش و SW ثم حذف قاعدة البيانات وإعادة التحميل
+        try {
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const r of regs) { try { await r.unregister(); } catch (_) {} }
+            }
+        } catch (_) {}
+        try {
+            if (window.caches && caches.keys) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+            }
+        } catch (_) {}
+        try { localStorage.clear(); } catch (_) {}
+        try { sessionStorage.clear(); } catch (_) {}
+
+        await new Promise((res) => {
+            const req = indexedDB.deleteDatabase('LawyerAppDB');
+            req.onsuccess = () => res();
+            req.onerror = () => res();
+            req.onblocked = () => res();
+        });
+        try { if (typeof showToast==='function') showToast('تم حذف جميع البيانات بنجاح ✅'); } catch(_) {}
+        setTimeout(() => { window.location.reload(); }, 600);
     } catch (error) {
         console.error('Error in handleDeleteAllData:', error);
-        showToast('فشل حذف البيانات: ' + error.message, 'error');
-        
-        // في حالة فشل كل شيء، إعادة تحميل الصفحة
-        setTimeout(() => {
-            window.location.reload();
-        }, 3000);
+        try { showToast('فشل حذف البيانات: ' + error.message, 'error'); } catch(_) {}
+        setTimeout(() => { window.location.reload(); }, 1500);
+    } finally {
+        // سنترك الـ overlay حتى إعادة التحميل حتى لا يتفاعل المستخدم
     }
 }
 
@@ -829,6 +930,29 @@ async function clearAllDataFromTables() {
 }
 
 // دالة لحذف قاعدة البيانات بالكامل
+function deleteDatabaseQuick() {
+    return new Promise((resolve) => {
+        try {
+            const dbInstance = (typeof getDbInstance === 'function') ? getDbInstance() : null;
+            if (dbInstance && typeof dbInstance.close === 'function') {
+                try { dbInstance.close(); } catch (_) {}
+            }
+        } catch (_) {}
+        let settled = false;
+        const finish = () => { if (!settled) { settled = true; resolve(); } };
+        try {
+            const req = indexedDB.deleteDatabase('LawyerAppDB');
+            req.onsuccess = finish;
+            req.onerror = finish;
+            req.onblocked = finish;
+        } catch (_) {
+            finish();
+        }
+        // fallback timeout to ensure we don't hang if deletion is blocked
+        setTimeout(finish, 1500);
+    });
+}
+
 async function deleteEntireDatabase() {
     return new Promise((resolve, reject) => {
         // إغلاق قاعدة البيانات بشكل قوي
@@ -1442,9 +1566,9 @@ function validateClientId(id) {
         return { valid: false, message: "يجب أن يحتوي على أرقام فقط" };
     }
     
-    // طول مناسب (6-15 رقم)
-    if (id.length < 6 || id.length > 15) {
-        return { valid: false, message: "يجب أن يكون بين 6 و 15 رقم" };
+    // طول مناسب (9-15 رقم)
+    if (id.length < 9 || id.length > 15) {
+        return { valid: false, message: "يجب أن يكون بين 9 و 15 رقم" };
     }
     
     return { valid: true };
@@ -1464,7 +1588,7 @@ function handleSyncIdInput() {
     // تحديث حالة الزر
     const syncButton = document.getElementById('sync-now-btn');
     if (syncButton) {
-        if (numbersOnly.length >= 6) {
+        if (numbersOnly.length >= 9) {
             syncButton.disabled = false;
             syncButton.classList.remove('opacity-50');
         } else {
@@ -2646,3 +2770,79 @@ function updateCountdownDisplay() {
 }
 
 // بدء المزامنة الدورية عند تحميل الصفحة
+
+// ===== إعدادات مسار مجلد الموكلين =====
+
+// تحميل إعدادات مسار مجلد الموكلين
+async function loadClientsPathSettings() {
+    try {
+        const customPath = await getSetting('customClientsPath');
+        const pathInput = document.getElementById('clients-path-input');
+        
+        if (pathInput) {
+            if (customPath) {
+                pathInput.value = customPath;
+                pathInput.placeholder = customPath;
+            } else {
+                pathInput.value = '';
+                pathInput.placeholder = 'لم يتم تحديد مسار مخصص';
+            }
+        }
+    } catch (error) {
+        console.error('خطأ في تحميل إعدادات مسار الموكلين:', error);
+    }
+}
+
+// اختيار مسار مجلد الموكلين
+async function handleChooseClientsPath() {
+    try {
+        if (!window.electronAPI || !window.electronAPI.chooseClientsPath) {
+            showToast('هذه الميزة متاحة فقط في تطبيق سطح المكتب', 'error');
+            return;
+        }
+
+        const result = await window.electronAPI.chooseClientsPath();
+        
+        if (result.success && result.path) {
+            // حفظ المسار الجديد
+            await setSetting('customClientsPath', result.path);
+            
+            // تحديث واجهة المستخدم
+            const pathInput = document.getElementById('clients-path-input');
+            if (pathInput) {
+                pathInput.value = result.path;
+                pathInput.placeholder = result.path;
+            }
+            
+            showToast('تم حفظ المسار الجديد بنجاح');
+        } else if (result.canceled) {
+            // المستخدم ألغى العملية
+            return;
+        } else {
+            showToast(result.message || 'فشل في اختيار المسار', 'error');
+        }
+    } catch (error) {
+        console.error('خطأ في اختيار مسار الموكلين:', error);
+        showToast('حدث خطأ في اختيار المسار', 'error');
+    }
+}
+
+// إعادة تعيين مسار مجلد الموكلين للافتراضي
+async function handleResetClientsPath() {
+    try {
+        // حذف المسار المخصص
+        await setSetting('customClientsPath', null);
+        
+        // تحديث واجهة المستخدم
+        const pathInput = document.getElementById('clients-path-input');
+        if (pathInput) {
+            pathInput.value = '';
+            pathInput.placeholder = 'لم يتم تحديد مسار مخصص';
+        }
+        
+        showToast('تم إعادة تعيين المسار للافتراضي');
+    } catch (error) {
+        console.error('خطأ في إعادة تعيين مسار الموكلين:', error);
+        showToast('حدث خطأ في إعادة التعيين', 'error');
+    }
+}

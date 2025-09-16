@@ -17,10 +17,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     buildAccessBackup: (customFolder) => ipcRenderer.invoke('build-access-backup', customFolder),
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
     copyPackToDesktop: () => ipcRenderer.invoke('copy-pack-to-desktop'),
+    chooseClientsPath: () => ipcRenderer.invoke('choose-clients-path'),
 
     // APIs التحديث
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     downloadAndInstallUpdate: () => ipcRenderer.invoke('download-and-install-update'),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    downloadAndInstallFromGitHub: (url, name) => ipcRenderer.invoke('download-and-install-from-github', url, name),
+
+    // إعادة تشغيل التطبيق بعد العمليات الثقيلة (كحذف قاعدة البيانات)
+    restartApp: () => ipcRenderer.invoke('restart-app'),
     
     // مستمعي أحداث التحديث
     onUpdateChecking: (callback) => ipcRenderer.on('update-checking', callback),

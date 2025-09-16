@@ -22,21 +22,29 @@ try {
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const https = require('https');
 
-// إضافة electron-updater
-const { autoUpdater } = require('electron-updater');
+// إضافة electron-updater مع معالجة الأخطاء
+let autoUpdater = null;
+try {
+    const updaterModule = require('electron-updater');
+    autoUpdater = updaterModule.autoUpdater;
+    
+    // إعداد التحديث
+    autoUpdater.checkForUpdatesAndNotify = false; // تعطيل الفحص التلقائي
+    autoUpdater.autoDownload = false; // تعطيل التحميل التلقائي
+    autoUpdater.autoInstallOnAppQuit = false; // تعطيل التثبيت التلقائي
 
-// إعداد التحديث
-autoUpdater.checkForUpdatesAndNotify = false; // تعطيل الفحص التلقائي
-autoUpdater.autoDownload = false; // تعطيل التحميل التلقائي
-autoUpdater.autoInstallOnAppQuit = false; // تعطيل التثبيت التلقائي
-
-// إعداد مستودع GitHub للتحديثات
-autoUpdater.setFeedURL({
-    provider: 'github',
-    owner: 'AhmadAllam',
-    repo: 'lawyers-app'
-});
+    // إعداد مستودع GitHub للتحديثات
+    autoUpdater.setFeedURL({
+        provider: 'github',
+        owner: 'AhmadAllam',
+        repo: 'lawyers-app'
+    });
+} catch (error) {
+    console.warn('electron-updater not available:', error.message);
+    autoUpdater = null;
+}
 
 let mainWindow;
 
@@ -126,9 +134,7 @@ function createWindow() {
                 })();`, true);
             }
             if (backupJson) {
-                const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-                const parentDir = path.dirname(appDir);
-                const clientsFolder = path.join(parentDir, 'ملفات الموكلين');
+                const clientsFolder = getClientsPath();
                 if (!fs.existsSync(clientsFolder)) {
                     fs.mkdirSync(clientsFolder, { recursive: true });
                 }
@@ -145,6 +151,70 @@ function createWindow() {
 
     mainWindow.on('closed', () => {
         mainWindow = null;
+    });
+}
+
+// Helper: ensure Desktop/التحديث folder exists
+function getUpdatesDir() {
+    const desktopPath = path.join(os.homedir(), 'Desktop');
+    const updatesDir = path.join(desktopPath, 'التحديث');
+    try {
+        if (!fs.existsSync(updatesDir)) {
+            fs.mkdirSync(updatesDir, { recursive: true });
+        }
+    } catch (e) {}
+    return updatesDir;
+}
+
+// Helper: download file with progress and follow redirects
+function downloadFileWithProgress(url, destPath) {
+    return new Promise((resolve, reject) => {
+        const tmpPath = destPath + '.part';
+        const headers = { 'User-Agent': 'LawApp-Updater' };
+
+        const doGet = (u) => {
+            https.get(u, { headers }, (res) => {
+                const status = res.statusCode || 0;
+                if ([301, 302, 303, 307, 308].includes(status) && res.headers.location) {
+                    res.resume();
+                    return doGet(res.headers.location);
+                }
+                if (status !== 200) {
+                    res.resume();
+                    return reject(new Error('HTTP ' + status));
+                }
+                const total = parseInt(res.headers['content-length'] || '0', 10);
+                const file = fs.createWriteStream(tmpPath);
+                let received = 0;
+
+                res.on('data', (chunk) => {
+                    received += chunk.length;
+                    file.write(chunk);
+                    if (mainWindow) {
+                        const percent = total ? Math.round((received / total) * 100) : 0;
+                        mainWindow.webContents.send('update-download-progress', {
+                            percent,
+                            transferred: received,
+                            total
+                        });
+                    }
+                });
+
+                res.on('end', () => {
+                    file.end(() => {
+                        try { fs.renameSync(tmpPath, destPath); } catch (e) {}
+                        resolve();
+                    });
+                });
+
+                res.on('error', (err) => {
+                    try { file.close(); } catch (e) {}
+                    reject(err);
+                });
+            }).on('error', reject);
+        };
+
+        doGet(url);
     });
 }
 
@@ -183,12 +253,41 @@ if (!gotTheLock && app) {
         }
     });
 
+    // إعادة تشغيل التطبيق بطلب من الواجهة
+    ipcMain.handle('restart-app', async () => {
+        try {
+            // أغلق جميع النوافذ ثم أعد التشغيل
+            if (mainWindow) {
+                try { mainWindow.removeAllListeners('close'); } catch(e) {}
+                try { mainWindow.destroy(); } catch(e) {}
+            }
+            app.relaunch();
+            app.exit(0);
+            return { success: true };
+        } catch (e) {
+            try { app.relaunch(); app.exit(0); } catch(_) {}
+            return { success: false, error: e?.message || 'restart failed' };
+        }
+    });
+
+
+    // متغير لحفظ المسار المخصص
+    let customClientsPath = null;
+
+    // دالة مساعدة للحصول على مسار مجلد الموكلين
+    function getClientsPath() {
+        if (customClientsPath) {
+            return path.join(customClientsPath, 'ملفات الموكلين');
+        }
+        
+        // المسار الافتراضي - سطح المكتب/مكتبي/ملفات الموكلين
+        const desktopPath = path.join(os.homedir(), 'Desktop');
+        return path.join(desktopPath, 'مكتبي', 'ملفات الموكلين');
+    }
 
     ipcMain.handle('create-client-folder', async (event, clientName) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const clientsFolder = path.join(parentDir, 'ملفات الموكلين');
+            const clientsFolder = getClientsPath();
             const clientFolder = path.join(clientsFolder, clientName);
 
 
@@ -231,9 +330,7 @@ if (!gotTheLock && app) {
 
     ipcMain.handle('open-client-folder', async (event, clientName) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const clientsFolder = path.join(parentDir, 'ملفات الموكلين');
+            const clientsFolder = getClientsPath();
             const clientFolder = path.join(clientsFolder, clientName);
 
             if (fs.existsSync(clientFolder)) {
@@ -251,9 +348,7 @@ if (!gotTheLock && app) {
 
     ipcMain.handle('open-clients-main-folder', async (event) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const clientsFolder = path.join(parentDir, 'ملفات الموكلين');
+            const clientsFolder = getClientsPath();
             if (!fs.existsSync(clientsFolder)) {
                 fs.mkdirSync(clientsFolder, { recursive: true });
             }
@@ -328,9 +423,8 @@ if (!gotTheLock && app) {
                 return { success: false, message: 'اسم المجلد يحتوي على أحرف غير مسموحة فقط' };
             }
 
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             const newFolderPath = path.join(libraryPath, cleanFolderName);
 
             // إنشاء مجلد المكتبة الرئيسي إذا لم يكن موجوداً
@@ -382,9 +476,8 @@ if (!gotTheLock && app) {
 
     ipcMain.handle('open-legal-library-main-folder', async (event) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             
             // إنشاء المجلد إذا لم يكن موجوداً
             if (!fs.existsSync(libraryPath)) {
@@ -401,9 +494,8 @@ if (!gotTheLock && app) {
 
     ipcMain.handle('load-legal-library-folders', async (event) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             
             // إنشاء مجلد المكتبة إذا لم يكن موجوداً
             if (!fs.existsSync(libraryPath)) {
@@ -461,9 +553,8 @@ if (!gotTheLock && app) {
 
     ipcMain.handle('open-legal-library-folder', async (event, folderName) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             const folderPath = path.join(libraryPath, folderName);
             
             if (fs.existsSync(folderPath)) {
@@ -480,9 +571,8 @@ if (!gotTheLock && app) {
 
     ipcMain.handle('delete-legal-library-folder', async (event, folderName) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             const folderPath = path.join(libraryPath, folderName);
             
             if (fs.existsSync(folderPath)) {
@@ -507,9 +597,8 @@ if (!gotTheLock && app) {
                 return { success: false, error: 'الاسم الجديد يحتوي على أحرف غير مسموحة' };
             }
 
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             const oldFolderPath = path.join(libraryPath, oldName);
             const newFolderPath = path.join(libraryPath, cleanNewName);
             
@@ -533,9 +622,8 @@ if (!gotTheLock && app) {
     // إرفاق ملفات لمجلد موجود
     ipcMain.handle('attach-files-to-folder', async (event, folderName) => {
         try {
-            const appDir = app && app.isPackaged ? path.dirname(process.execPath) : process.cwd();
-            const parentDir = path.dirname(appDir);
-            const libraryPath = path.join(parentDir, 'المكتبة القانونية');
+            const clientsPath = getClientsPath();
+            const libraryPath = path.join(path.dirname(clientsPath), 'المكتبة القانونية');
             const folderPath = path.join(libraryPath, folderName);
             
             if (!fs.existsSync(folderPath)) {
@@ -663,6 +751,43 @@ if (!gotTheLock && app) {
         }
     });
 
+    // اختيار مسار مجلد الموكلين
+    ipcMain.handle('choose-clients-path', async (event) => {
+        try {
+            const result = await dialog.showOpenDialog(mainWindow, {
+                title: 'اختيار مسار مجلد الموكلين',
+                properties: ['openDirectory', 'createDirectory'],
+                buttonLabel: 'اختيار هذا المجلد'
+            });
+
+            if (result.canceled) {
+                return { success: false, canceled: true };
+            }
+
+            const selectedPath = result.filePaths[0];
+            if (selectedPath) {
+                // حفظ المسار في المتغير
+                customClientsPath = selectedPath;
+                
+                return { 
+                    success: true, 
+                    path: selectedPath,
+                    message: 'تم اختيار المسار بنجاح'
+                };
+            } else {
+                return { 
+                    success: false, 
+                    message: 'لم يتم اختيار مسار صحيح'
+                };
+            }
+        } catch (error) {
+            return { 
+                success: false, 
+                message: 'حدث خطأ في اختيار المسار: ' + error.message 
+            };
+        }
+    });
+
     // نسخ مجلد pack إلى سطح المكتب باسم "الصيغ الجاهزة"
     ipcMain.handle('copy-pack-to-desktop', async (event) => {
         try {
@@ -716,9 +841,74 @@ if (!gotTheLock && app) {
 
     // ===== معالجات التحديث =====
     
+    // إرجاع إصدار التطبيق الحالي
+    ipcMain.handle('get-app-version', async () => {
+        try {
+            const version = app && typeof app.getVersion === 'function' ? app.getVersion() : '0.0.0';
+            return { success: true, version };
+        } catch (e) {
+            return { success: false, error: e.message || 'تعذر قراءة الإصدار' };
+        }
+    });
+
+    // تنزيل ملف التحديث من GitHub إلى Desktop/التحديث ثم تشغيله وإغلاق التطبيق
+    ipcMain.handle('download-and-install-from-github', async (event, downloadUrl, suggestedName) => {
+        try {
+            if (!downloadUrl || typeof downloadUrl !== 'string') {
+                return { success: false, error: 'رابط التنزيل غير صالح' };
+            }
+            const updatesDir = getUpdatesDir();
+            const urlPath = (() => {
+                try { return new URL(downloadUrl).pathname; } catch (e) { return ''; }
+            })();
+            const nameFromUrl = urlPath ? path.basename(urlPath) : 'LawApp-Setup.exe';
+            const filename = (suggestedName && typeof suggestedName === 'string') ? suggestedName : nameFromUrl;
+            const destPath = path.join(updatesDir, filename);
+
+            if (mainWindow) {
+                mainWindow.webContents.send('update-checking');
+                mainWindow.webContents.send('update-available', { version: filename, releaseNotes: '', releaseDate: '' });
+            }
+
+            await downloadFileWithProgress(downloadUrl, destPath);
+
+            if (mainWindow) {
+                mainWindow.webContents.send('update-downloaded');
+            }
+
+            // تشغيل المثبت
+            try {
+                const { spawn } = require('child_process');
+                const child = spawn(destPath, [], { detached: true, stdio: 'ignore' });
+                child.unref();
+            } catch (e) {
+                await shell.openPath(destPath);
+            }
+
+            // إغلاق التطبيق بعد بدء المثبت
+            setTimeout(() => {
+                try { app.quit(); } catch (e) {}
+            }, 500);
+
+            return { success: true, savedPath: destPath };
+        } catch (error) {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-error', error.message || 'خطأ أثناء تنزيل التحديث');
+            }
+            return { success: false, error: error.message || 'خطأ أثناء تنزيل التحديث' };
+        }
+    });
+    
     // فحص التحديثات
     ipcMain.handle('check-for-updates', async () => {
         try {
+            if (!autoUpdater) {
+                return {
+                    success: false,
+                    error: 'خدمة التحديثات غير متوفرة'
+                };
+            }
+            
             const updateInfo = await autoUpdater.checkForUpdates();
             if (updateInfo && updateInfo.updateInfo) {
                 return {
@@ -746,6 +936,13 @@ if (!gotTheLock && app) {
     // تحميل وتثبيت التحديث
     ipcMain.handle('download-and-install-update', async () => {
         try {
+            if (!autoUpdater) {
+                return {
+                    success: false,
+                    error: 'خدمة التحديثات غير متوفرة'
+                };
+            }
+            
             // تحميل التحديث
             await autoUpdater.downloadUpdate();
             
@@ -762,47 +959,49 @@ if (!gotTheLock && app) {
     });
 
     // أحداث التحديث
-    autoUpdater.on('checking-for-update', () => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-checking');
-        }
-    });
+    if (autoUpdater) {
+        autoUpdater.on('checking-for-update', () => {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-checking');
+            }
+        });
 
-    autoUpdater.on('update-available', (info) => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-available', {
-                version: info.version,
-                releaseNotes: info.releaseNotes,
-                releaseDate: info.releaseDate
-            });
-        }
-    });
+        autoUpdater.on('update-available', (info) => {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-available', {
+                    version: info.version,
+                    releaseNotes: info.releaseNotes,
+                    releaseDate: info.releaseDate
+                });
+            }
+        });
 
-    autoUpdater.on('update-not-available', () => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-not-available');
-        }
-    });
+        autoUpdater.on('update-not-available', () => {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-not-available');
+            }
+        });
 
-    autoUpdater.on('download-progress', (progressObj) => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-download-progress', {
-                percent: Math.round(progressObj.percent),
-                transferred: progressObj.transferred,
-                total: progressObj.total
-            });
-        }
-    });
+        autoUpdater.on('download-progress', (progressObj) => {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-download-progress', {
+                    percent: Math.round(progressObj.percent),
+                    transferred: progressObj.transferred,
+                    total: progressObj.total
+                });
+            }
+        });
 
-    autoUpdater.on('update-downloaded', () => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-downloaded');
-        }
-    });
+        autoUpdater.on('update-downloaded', () => {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-downloaded');
+            }
+        });
 
-    autoUpdater.on('error', (error) => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-error', error.message);
-        }
-    });
+        autoUpdater.on('error', (error) => {
+            if (mainWindow) {
+                mainWindow.webContents.send('update-error', error.message);
+            }
+        });
+    }
 }

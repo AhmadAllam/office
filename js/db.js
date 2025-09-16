@@ -264,17 +264,26 @@ function getFromIndex(storeName, indexName, query) {
 function addClient(clientData) {
     return new Promise(async (resolve, reject) => {
         if (!db) return reject("DB not initialized");
-        try {
-            const lic = await getSetting('licensed');
-            const isLicensed = (lic === true || lic === 'true');
-            if (!isLicensed) {
+        
+        // فحص حالة الترخيص
+        const lic = await getSetting('licensed');
+        const isLicensed = (lic === true || lic === 'true');
+        
+        // إذا لم يكن مرخص، تطبيق قيود الفترة التجريبية
+        if (!isLicensed) {
+            try {
                 const count = await getCount('clients');
-                if (count >= 14) {
-                    try { if (typeof showToast === 'function') showToast('وصلت للحد الأقصى للموكلين (14)، يرجى التفعيل للمتابعة', 'error'); } catch (e) {}
+                if (count >= 15) {
+                    try { 
+                        if (typeof showToast === 'function') {
+                            showToast('وصلت للحد الأقصى للموكلين (15) في الفترة التجريبية، يرجى التفعيل للمتابعة', 'error'); 
+                        }
+                    } catch (e) {}
                     return reject(new Error('ClientLimitReached'));
                 }
-            }
-        } catch (e) {}
+            } catch (e) {}
+        }
+        
         const transaction = db.transaction(['clients'], 'readwrite');
         const objectStore = transaction.objectStore('clients');
         const request = objectStore.add(clientData);

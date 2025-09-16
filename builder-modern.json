@@ -7,10 +7,17 @@
   "files": [
     "**/*",
     "!node_modules/**/*",
+    "node_modules/electron-updater/**/*",
     "!.zencoder/**/*",
     "!dist/**/*",
     "!dist-legacy/**/*",
     "!dist-modern/**/*"
+  ],
+  "asar": {
+    "smartUnpack": true
+  },
+  "asarUnpack": [
+    "**/node_modules/electron-updater/**/*"
   ],
   "win": {
     "target": [
